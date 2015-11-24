@@ -14,27 +14,20 @@ import com.jayway.perfectstorm.storm.bolt.tps.CalculateTweetsPerSecondBolt;
 import com.jayway.perfectstorm.storm.bolt.tps.PrintTweetsPerSecondBolt;
 import com.jayway.perfectstorm.storm.bolt.tweetfind.FindTweetContainingStringBolt;
 import com.jayway.perfectstorm.storm.bolt.tweetfind.FoundTweetsPublisherBolt;
-import com.jayway.perfectstorm.storm.spout.TwitterSpout;
+import com.jayway.perfectstorm.storm.spout.TwitterStreamFilterBuilder;
 import com.jayway.perfectstorm.storm.spout.TwitterStreamSpout;
 import com.jayway.perfectstorm.vertx.VertxServer;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.stream.Stream;
+
+import org.slf4j.MarkerFactory;
 
 import static com.jayway.perfectstorm.storm.bolt.countrycount.MostFrequentCountryBolt.MostFrequentCountryEsperConfig;
 import static com.jayway.perfectstorm.storm.bolt.tps.CalculateTweetsPerSecondBolt.CalculateTweetsPerSecondEsperConfig;
 
 public class Bootstrap {
-
-    private static FilterQuery filterKeywords() {
-		// filter keywords
-		FilterQuery qry = new FilterQuery();
-		// String[] keywords = { "football" };
-		//String[] keywords = { "barbie", "mlp", "monster high" };
-		String[] keywords = { "terrorism", "paris", "isis" };
-		qry.track(keywords);
-		return qry;
-	}
 	
     public static void main(String[] args) throws Exception {
     	
@@ -52,8 +45,7 @@ public class Bootstrap {
         // Storm
 
         // Twitter country count
-        // TwitterStreamSpout twitterStreamSpout = new TwitterStreamSpout(); //orig
-        TwitterSpout twitterStreamSpout = new TwitterSpout(filterKeywords());
+        TwitterStreamSpout twitterStreamSpout = new TwitterStreamSpout(makeFilter());
         
         GeolocationToCountryNameBolt geolocationToCountryNameBolt = new GeolocationToCountryNameBolt();
         MostFrequentCountryBolt mostFrequentCountryBolt = new MostFrequentCountryBolt();
@@ -108,6 +100,17 @@ public class Bootstrap {
         EsperContext.shutdown();
         vertxServer.stop();
     }
+    
+	private static FilterQuery makeFilter() {
+		return TwitterStreamFilterBuilder
+				.begin()
+				.filterKeywords(new String[]{ "sex" })
+				.filterGeography(new double[][] { { -125.0011, 24.9493 }, { -66.9326, 49.5904 } }) //us
+				.filterLanguage(new String[]{"en"})
+				.build();
+
+	}
+    
     
 
 }
