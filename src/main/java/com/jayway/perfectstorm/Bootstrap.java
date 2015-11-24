@@ -3,6 +3,8 @@ package com.jayway.perfectstorm;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.topology.TopologyBuilder;
+import twitter4j.FilterQuery;
+
 import com.jayway.perfectstorm.esper.EsperContext;
 import com.jayway.perfectstorm.storm.bolt.countrycount.GeolocationToCountryNameBolt;
 import com.jayway.perfectstorm.storm.bolt.countrycount.MostFrequentCountryBolt;
@@ -12,6 +14,7 @@ import com.jayway.perfectstorm.storm.bolt.tps.CalculateTweetsPerSecondBolt;
 import com.jayway.perfectstorm.storm.bolt.tps.PrintTweetsPerSecondBolt;
 import com.jayway.perfectstorm.storm.bolt.tweetfind.FindTweetContainingStringBolt;
 import com.jayway.perfectstorm.storm.bolt.tweetfind.FoundTweetsPublisherBolt;
+import com.jayway.perfectstorm.storm.spout.TwitterSpout;
 import com.jayway.perfectstorm.storm.spout.TwitterStreamSpout;
 import com.jayway.perfectstorm.vertx.VertxServer;
 
@@ -23,9 +26,18 @@ import static com.jayway.perfectstorm.storm.bolt.tps.CalculateTweetsPerSecondBol
 
 public class Bootstrap {
 
+    private static FilterQuery filterKeywords() {
+		// filter keywords
+		FilterQuery qry = new FilterQuery();
+		// String[] keywords = { "football" };
+		//String[] keywords = { "barbie", "mlp", "monster high" };
+		String[] keywords = { "terrorism", "paris", "isis" };
+		qry.track(keywords);
+		return qry;
+	}
+	
     public static void main(String[] args) throws Exception {
-        final String username = args[0];
-        final String password = args[1];
+    	
 
         TopologyBuilder builder = new TopologyBuilder();
 
@@ -40,7 +52,9 @@ public class Bootstrap {
         // Storm
 
         // Twitter country count
-        TwitterStreamSpout twitterStreamSpout = new TwitterStreamSpout(username, password);
+        // TwitterStreamSpout twitterStreamSpout = new TwitterStreamSpout(); //orig
+        TwitterSpout twitterStreamSpout = new TwitterSpout(filterKeywords());
+        
         GeolocationToCountryNameBolt geolocationToCountryNameBolt = new GeolocationToCountryNameBolt();
         MostFrequentCountryBolt mostFrequentCountryBolt = new MostFrequentCountryBolt();
         MostFrequentCountryPresenterBolt mostFrequentCountryPresenterBolt = new MostFrequentCountryPresenterBolt();
@@ -94,4 +108,6 @@ public class Bootstrap {
         EsperContext.shutdown();
         vertxServer.stop();
     }
+    
+
 }

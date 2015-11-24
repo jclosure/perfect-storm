@@ -14,20 +14,18 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+
+
 import static backtype.storm.utils.Utils.tuple;
 
 public class TwitterStreamSpout extends BaseRichSpout {
 
-    private final String username;
-    private final String password;
+
     private transient SpoutOutputCollector collector;
     private transient BlockingQueue<Status> tweetQueue;
     private transient TwitterStream twitterStream;
 
-    public TwitterStreamSpout(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
+
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
@@ -40,14 +38,26 @@ public class TwitterStreamSpout extends BaseRichSpout {
         collector = spoutOutputCollector;
         tweetQueue = new ArrayBlockingQueue<>(3000);
 
-        Configuration twitterConf = new ConfigurationBuilder().setUser(username).setPassword(password).build();
-        TwitterStreamFactory factory = new TwitterStreamFactory(twitterConf);
-        twitterStream = factory.getInstance();
+        TwitterStream stream = com.jayway.perfectstorm.TwitterStreamBuilderUtil.getStream();
+
         twitterStream.addListener(new TwitterStreamListener(tweetQueue));
 
-        twitterStream.sample();
+        FilterQuery query = filterKeywords();
+        
+        //twitterStream.sample();
+        twitterStream.filter(query);
     }
 
+    private FilterQuery filterKeywords() {
+		// filter keywords
+		FilterQuery qry = new FilterQuery();
+		// String[] keywords = { "football" };
+		//String[] keywords = { "barbie", "mlp", "monster high" };
+		String[] keywords = { "terrorism", "paris", "isis" };
+		qry.track(keywords);
+		return qry;
+	}
+    
     @Override
     public void nextTuple() {
         Status tweet = tweetQueue.poll();
